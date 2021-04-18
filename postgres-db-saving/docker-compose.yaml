@@ -1,0 +1,44 @@
+version: '3.3'
+services:
+  postgres:
+    image: postgres:9.6.21-alpine
+    ports:
+      - '5432:5432'
+    environment:
+      - 'POSTGRES_USER=admin'
+      - 'POSTGRES_PASSWORD=flying-saucers'
+      - 'POSTGRES_DB=public'
+      - 'POSTGRES_MULTIPLE_DATABASES=unleash,keycloak,my_project'
+    volumes:
+      - ./docker/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      # - ./docker/postgres/data:/var/lib/postgresql/data:rw
+      - ./docker/postgres/postgresql.conf:/etc/postgresql.conf
+  unleash:
+    build: ./docker/unleash/.
+    ports:
+      - '4242:4242'
+    environment:
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+      - DATABASE_URL=postgres://unleash:unleash@postgres:5432/unleash
+    depends_on:
+      - postgres
+  keycloak:
+    build: ./docker/keycloak/.
+    ports:
+      - '8080:8080'
+      - '8787:8787'
+    environment:
+      - KEYCLOAK_USER=admin
+      - KEYCLOAK_PASSWORD=flying-saucers
+      - DB_VENDOR=postgres
+      - DB_ADDR=postgres
+      - DB_PORT=5432
+      - DB_USER=keycloak
+      - DB_PASSWORD=keycloak
+      - DB_DATABASE=keycloak
+      # - KEYCLOAK_LOGLEVEL=INFO
+      # - ROOT_LOGLEVEL=INFO
+      # - WILDFLY_LOGLEVEL=INFO
+    depends_on:
+      - postgres
